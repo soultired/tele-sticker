@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#EAF2FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B141E" media="(prefers-color-scheme: dark)">
+<title>Tải sticker Telegram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: một cột như app trên điện thoại. Khay sticker giống tờ sticker thật, mỗi cái có viền trắng cắt sát hình. */
+:root{
+  --bg:#EAF2FA; --surface:#FFFFFF; --sheet:#F5F9FD; --ink:#102235; --mut:#566879;
+  --line:#D2DFEB; --dot:#C3D4E5; --acc:#1673B0; --acc-ink:#FFFFFF; --bad:#B3261E;
+  --diecut:drop-shadow(1.5px 0 0 #fff) drop-shadow(-1.5px 0 0 #fff) drop-shadow(0 1.5px 0 #fff) drop-shadow(0 -1.5px 0 #fff) drop-shadow(0 2px 3px rgba(16,34,53,.28));
+  --font:"Be Vietnam Pro",-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0B141E; --surface:#142130; --sheet:#0F1B28; --ink:#E7EFF7; --mut:#93A5B7;
+    --line:#243648; --dot:#223649; --acc:#5BB8F2; --acc-ink:#06131F; --bad:#FF8A80}
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 var(--font);
+  padding:max(24px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
+}
+main{max-width:640px; margin:0 auto; display:grid; gap:18px; padding-bottom:28px}
+h1{font-size:1.75rem; line-height:1.15; letter-spacing:-.02em; margin:0 0 6px; font-weight:700; text-wrap:balance}
+h2{font-size:1.2rem; line-height:1.25; margin:0; font-weight:600; text-wrap:balance}
+p{margin:0}
+.lede,.mut{color:var(--mut)}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+a{color:var(--acc)}
+code{font:.9em ui-monospace,SFMono-Regular,Menlo,monospace; background:var(--line); padding:1px 6px; border-radius:6px}
+:focus-visible{outline:2px solid var(--acc); outline-offset:2px}
+
+/* nút */
+button{font:inherit; min-height:48px; padding:0 18px; border-radius:14px; border:1.5px solid transparent; cursor:pointer; font-weight:600; color:inherit; background:none; -webkit-tap-highlight-color:transparent}
+button:disabled{opacity:.55; cursor:default}
+.pri{background:var(--acc); color:var(--acc-ink)}
+.sec{background:var(--surface); border-color:var(--line)}
+.ghost{color:var(--acc); padding:0 8px; min-height:44px}
+
+/* ô nhập */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:18px; display:grid; gap:12px}
+.card ol{margin:0; padding-left:1.25rem; display:grid; gap:4px}
+.field{display:flex; align-items:center; background:var(--surface); border:1.5px solid var(--line); border-radius:14px; padding-left:14px; min-width:0}
+.field:focus-within{border-color:var(--acc); box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
+.field input{flex:1; min-width:0; min-height:50px; border:0; background:none; color:var(--ink); font:inherit; font-size:16px; outline:0}
+.field input::placeholder{color:var(--mut); opacity:.8}
+.field .ghost{border-radius:12px}
+.finder{display:grid; gap:10px}
+.row{display:flex; gap:10px}
+.row>*{flex:1}
+.bot{display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--mut); font-size:.9rem}
+.status,.tokmsg{font-size:.92rem; color:var(--mut)}
+.status:empty,.tokmsg:empty{display:none}
+.status.err,.tokmsg.err{color:var(--bad)}
+
+/* khay sticker */
+.sheet{
+  background-color:var(--sheet);
+  background-image:radial-gradient(var(--dot) 1px,transparent 1.3px); background-size:14px 14px;
+  border:1px solid var(--line); border-radius:20px; padding:10px;
+}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:2px}
+.empty{padding:22px 18px; color:var(--mut); display:grid; gap:6px}
+.empty strong{color:var(--ink); font-weight:600}
+.tile{aspect-ratio:1; padding:7px; border:0; border-radius:16px; display:grid; place-items:center; min-height:0; min-width:0; position:relative}
+.tile:active{transform:scale(.94)}
+.tile img,.tile video{width:100%; height:100%; object-fit:contain; filter:var(--diecut); pointer-events:none}
+.tile.in>*{animation:pop .42s cubic-bezier(.2,1.3,.4,1) both}
+.tile.wait{background:color-mix(in srgb,var(--line) 55%,transparent); animation:pulse 1.5s ease-in-out infinite}
+.tile.wait::after{content:attr(data-e); font-size:1.7rem; opacity:.35; filter:grayscale(1)}
+.tile.fail{background:color-mix(in srgb,var(--bad) 12%,transparent); color:var(--bad); font-size:.8rem; font-weight:600}
+.tgs{display:grid; justify-items:center; gap:2px; font-size:2rem; line-height:1.1}
+.tgs small{font-size:.7rem; color:var(--mut); font-weight:500}
+@keyframes pop{from{opacity:0; transform:scale(.55) rotate(-8deg)} to{opacity:1; transform:none}}
+@keyframes pulse{50%{opacity:.55}}
+
+/* kết quả */
+.result{display:grid; gap:12px}
+.head{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap}
+.head .mut{font-size:.9rem}
+.seg{display:inline-flex; background:var(--line); border-radius:12px; padding:3px; gap:2px}
+.seg label{position:relative}
+.seg input{position:absolute; inset:0; opacity:0; margin:0; cursor:pointer}
+.seg span{display:block; padding:6px 12px; border-radius:9px; font-size:.85rem; font-weight:500}
+.seg input:checked+span{background:var(--surface); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.seg input:focus-visible+span{outline:2px solid var(--acc)}
+.fmt{display:flex; align-items:center; gap:8px; font-size:.85rem; color:var(--mut)}
+.hint{font-size:.88rem; color:var(--mut)}
+.bar{
+  position:sticky; bottom:max(12px,env(safe-area-inset-bottom)); z-index:2;
+  display:flex; gap:8px; padding:8px; border-radius:20px;
+  background:color-mix(in srgb,var(--surface) 92%,transparent); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--line); box-shadow:0 8px 24px rgba(8,20,34,.18);
+}
+.bar button{flex:1}
+.bar .pri{flex:1.6}
+
+/* xem từng sticker */
+dialog{border:0; padding:0; background:var(--surface); color:var(--ink); width:min(420px,100%); max-width:100%; border-radius:24px; font-family:var(--font)}
+dialog::backdrop{background:rgba(6,14,22,.6)}
+dialog[open]{animation:sheet .24s ease-out}
+@keyframes sheet{from{transform:translateY(24px); opacity:0}}
+@media (max-width:600px){dialog{margin:auto auto 0; border-radius:24px 24px 0 0}}
+.dlg{padding:16px 16px calc(16px + env(safe-area-inset-bottom)); display:grid; gap:12px}
+.dlg header{display:flex; justify-content:space-between; align-items:center}
+.stage{aspect-ratio:1; max-height:52vh; margin:0 auto; width:100%; display:grid; place-items:center; padding:20px; border-radius:18px; background-color:var(--sheet); background-image:radial-gradient(var(--dot) 1px,transparent 1.3px); background-size:14px 14px; border:1px solid var(--line)}
+.stage img,.stage video{max-width:100%; max-height:100%; filter:var(--diecut)}
+.stage p{text-align:center; color:var(--mut)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important; transition:none!important}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Tải sticker Telegram</h1>
+    <p class="lede">Dán link bộ sticker, lưu cả bộ về máy.</p>
+  </header>
+
+  <section id="setup" class="card" hidden>
+    <h2>Kết nối một bot Telegram</h2>
+    <p class="mut">Telegram chỉ cho tải sticker qua bot. Bạn làm một lần, token được lưu ngay trên máy này.</p>
+    <ol>
+      <li>Mở <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> trong Telegram.</li>
+      <li>Gửi <code>/newbot</code> rồi đặt tên cho bot.</li>
+      <li>Copy token BotFather gửi lại và dán vào ô dưới.</li>
+    </ol>
+    <form id="tokForm" class="finder" autocomplete="off">
+      <label class="sr" for="tok">Bot token</label>
+      <div class="field"><input id="tok" type="password" placeholder="123456789:AAH..." autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <div class="row">
+        <button class="pri" type="submit">Kết nối</button>
+        <button id="tokCancel" class="sec" type="button" hidden>Huỷ</button>
+      </div>
+      <p id="tokMsg" class="tokmsg" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <form id="finder" class="finder" autocomplete="off" hidden>
+    <label class="sr" for="pack">Link bộ sticker</label>
+    <div class="field">
+      <input id="pack" type="text" inputmode="url" placeholder="t.me/addstickers/TenBo" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button id="pasteBtn" class="ghost" type="button">Dán</button>
+    </div>
+    <button id="go" class="pri" type="submit">Lấy sticker</button>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </form>
+
+  <div id="empty" class="sheet empty" hidden>
+    <strong>Sticker sẽ hiện ở đây.</strong>
+    <p>Lấy link trong Telegram: bấm vào một sticker, mở bộ sticker, chọn Chia sẻ rồi Sao chép liên kết.</p>
+  </div>
+
+  <section id="result" class="result" hidden>
+    <div class="head">
+      <div>
+        <h2 id="setTitle"></h2>
+        <p id="setMeta" class="mut"></p>
+      </div>
+      <div id="fmtBox" class="fmt">
+        <span id="fmtLbl">Tải về dạng</span>
+        <div class="seg" role="radiogroup" aria-labelledby="fmtLbl">
+          <label><input type="radio" name="fmt" value="png" checked><span>PNG</span></label>
+          <label><input type="radio" name="fmt" value="orig"><span>WebP gốc</span></label>
+        </div>
+      </div>
+    </div>
+    <div id="sheet" class="sheet grid"></div>
+    <p id="hint" class="hint" hidden>Bấm nút Lưu, rồi chọn Lưu ảnh trong bảng chia sẻ của iPhone.</p>
+    <div class="bar">
+      <button id="shareBtn" class="pri" type="button" hidden></button>
+      <button id="zipBtn" class="sec" type="button" disabled>Tải .zip</button>
+    </div>
+  </section>
+
+  <footer id="bot" class="bot">
+    <span>Đã kết nối <span id="botName"></span></span>
+    <button id="tokChange" class="ghost" type="button">Đổi token</button>
+  </footer>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="dlg">
+    <header>
+      <h2 id="dlgTitle"></h2>
+      <button id="dlgClose" class="ghost" type="button">Đóng</button>
+    </header>
+    <div id="stage" class="stage"></div>
+    <div class="row">
+      <button id="oneShare" class="pri" type="button" hidden></button>
+      <button id="oneSave" class="sec" type="button">Tải về</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const LS = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+};
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const canShareFiles = (() => {
+  try{ return !!(navigator.canShare && navigator.canShare({files:[new File(['x'],'a.png',{type:'image/png'})]})); }
+  catch(e){ return false; }
+})();
+
+let token = LS.get('tg_tok') || '', botName = LS.get('tg_bot') || '', editing = false;
+let run = 0, setName = '', items = [], current = null;
+
+/* ---------- lỗi và API ---------- */
+class Fail extends Error{ constructor(kind, detail){ super(detail || kind); this.kind = kind; } }
+const TEXT = {
+  bad_token: 'Token chưa đúng. Copy lại từ @BotFather rồi dán lại.',
+  no_set: 'Không tìm thấy bộ sticker này. Kiểm tra lại link.',
+  net: 'Không kết nối được Telegram. Kiểm tra mạng rồi thử lại.'
+};
+const errText = e => e instanceof Fail ? (TEXT[e.kind] || e.message) : 'Có lỗi xảy ra. Thử lại nhé.';
+
+async function api(method, params){
+  let j;
+  try{
+    const r = await fetch(`https://api.telegram.org/bot${token}/${method}?` + new URLSearchParams(params || {}));
+    j = await r.json();
+  }catch(e){ throw new Fail('net'); }
+  if(!j.ok){
+    const d = j.description || '';
+    if(j.error_code === 401 || j.error_code === 404) throw new Fail('bad_token');
+    if(/STICKERSET_INVALID|sticker set/i.test(d)) throw new Fail('no_set');
+    throw new Fail('other', d);
+  }
+  return j.result;
+}
+async function fetchBlob(path){
+  let r;
+  try{ r = await fetch(`https://api.telegram.org/file/bot${token}/${path}`); }
+  catch(e){ throw new Fail('net'); }
+  if(!r.ok) throw new Fail('net');
+  return r.blob();
+}
+const MIME = {webp:'image/webp', webm:'video/webm', tgs:'application/x-tgsticker'};
+
+async function toPng(blob){
+  const bmp = await createImageBitmap(blob);
+  const c = document.createElement('canvas');
+  c.width = bmp.width; c.height = bmp.height;
+  c.getContext('2d').drawImage(bmp, 0, 0);
+  return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('png')), 'image/png'));
+}
+async function fetchItem(it){
+  const f = await api('getFile', {file_id: it.fileId});
+  it.ext = (f.file_path.split('.').pop() || 'webp').toLowerCase();
+  it.kind = it.ext === 'tgs' ? 'tgs' : it.ext === 'webm' ? 'video' : 'image';
+  const raw = await fetchBlob(f.file_path);
+  it.orig = new Blob([raw], {type: MIME[it.ext] || raw.type});
+  if(it.kind === 'image' && it.ext === 'webp'){ try{ it.png = await toPng(it.orig); }catch(e){} }
+  it.url = URL.createObjectURL(it.orig);
+}
+
+/* ---------- tiện ích ---------- */
+const parseName = s => {
+  s = (s || '').trim();
+  const m = s.match(/(?:addstickers|addemoji)\/([A-Za-z0-9_]+)/);
+  return m ? m[1] : s.split(/[?#\s]/)[0];
+};
+const fname = (it, ext) => `${setName}_${String(it.i + 1).padStart(3,'0')}.${ext}`;
+const fmt = () => document.querySelector('input[name=fmt]:checked').value;
+const pick = it => (fmt() === 'png' && it.png) ? {blob: it.png, ext: 'png'} : {blob: it.orig, ext: it.ext};
+function save(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+function say(t, err){ const s = $('status'); s.textContent = t; s.className = 'status' + (err ? ' err' : ''); }
+function tokSay(t, err){ const s = $('tokMsg'); s.textContent = t; s.className = 'tokmsg' + (err ? ' err' : ''); }
+
+function sync(){
+  const has = !!token;
+  $('setup').hidden = has && !editing;
+  $('tokCancel').hidden = !has;
+  $('finder').hidden = !has || editing;
+  $('bot').hidden = !has;
+  $('botName').textContent = botName ? '@' + botName : 'bot của bạn';
+  $('empty').hidden = !has || editing || !$('result').hidden || !!items.length;
+}
+
+/* ---------- tải bộ sticker ---------- */
+function fillTile(it){
+  const b = it.btn;
+  b.className = 'tile in'; b.disabled = false; b.textContent = '';
+  b.setAttribute('aria-label', `Sticker ${it.i + 1} ${it.emoji}`);
+  let el;
+  if(it.kind === 'tgs'){
+    el = document.createElement('span'); el.className = 'tgs';
+    el.textContent = it.emoji || '🎞';
+    const s = document.createElement('small'); s.textContent = 'Động'; el.append(s);
+  }else if(it.kind === 'video'){
+    el = document.createElement('video'); el.src = it.url;
+    el.muted = true; el.loop = true; el.autoplay = true; el.playsInline = true;
+  }else{
+    el = document.createElement('img'); el.src = it.url; el.alt = ''; el.decoding = 'async';
+  }
+  b.append(el);
+}
+function failTile(it){
+  it.failed = true;
+  const b = it.btn;
+  b.className = 'tile fail'; b.disabled = false; b.textContent = 'Thử lại';
+  b.setAttribute('aria-label', `Sticker ${it.i + 1} chưa tải được, bấm để thử lại`);
+}
+async function loadItem(it){
+  it.failed = false;
+  it.btn.className = 'tile wait'; it.btn.disabled = true; it.btn.textContent = '';
+  try{ await fetchItem(it); fillTile(it); }
+  catch(e){ failTile(it); }
+}
+function updateBar(){
+  const n = items.length;
+  const got = items.filter(i => i.orig).length;
+  const fin = items.every(i => i.orig || i.failed);
+  const stat = items.filter(i => i.kind === 'image' && i.orig).length;
+  const wait = `Đang chuẩn bị ${got}/${n}`;
+  $('zipBtn').disabled = !fin || !got;
+  const share = $('shareBtn');
+  share.hidden = !canShareFiles;
+  share.disabled = !fin || !stat;
+  if(canShareFiles){
+    share.textContent = !fin ? wait : IOS ? `Lưu ${stat} sticker vào Ảnh` : `Chia sẻ ${stat} sticker`;
+    $('zipBtn').textContent = 'Tải .zip';
+    $('zipBtn').className = 'sec';
+  }else{
+    $('zipBtn').textContent = fin ? 'Tải cả bộ (.zip)' : wait;
+    $('zipBtn').className = 'pri';
+  }
+  $('hint').hidden = !(IOS && canShareFiles && fin && stat);
+  $('fmtBox').hidden = !items.some(i => i.ext === 'webp');
+}
+
+async function load(raw){
+  const name = parseName(raw);
+  if(!token){ editing = false; sync(); return; }
+  if(!name){ say('Dán link dạng t.me/addstickers/TenBo.', true); return; }
+  const my = ++run;
+  items.forEach(i => i.url && URL.revokeObjectURL(i.url));
+  items = [];
+  $('sheet').innerHTML = ''; $('result').hidden = true; $('empty').hidden = true;
+  $('go').disabled = true; say('Đang lấy bộ sticker...');
+  try{
+    const set = await api('getStickerSet', {name});
+    if(my !== run) return;
+    setName = set.name;
+    $('setTitle').textContent = set.title;
+    items = set.stickers.map((s, i) => ({i, emoji: s.emoji || '', fileId: s.file_id,
+      kind: s.is_animated ? 'tgs' : s.is_video ? 'video' : 'image'}));
+    const anim = items.filter(i => i.kind !== 'image').length;
+    $('setMeta').textContent = `${items.length} sticker` + (anim ? ` (${anim} động)` : '');
+    items.forEach(it => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'tile wait'; b.disabled = true; b.dataset.e = it.emoji;
+      b.setAttribute('aria-label', `Sticker ${it.i + 1}, đang tải`);
+      b.onclick = () => it.orig ? openDlg(it) : loadItem(it).then(updateBar);
+      it.btn = b; $('sheet').append(b);
+    });
+    $('result').hidden = false; updateBar(); sync();
+    say(`Đang tải ${items.length} sticker...`);
+    let idx = 0;
+    const worker = async () => {
+      while(idx < items.length && my === run){
+        await loadItem(items[idx++]);
+        updateBar();
+      }
+    };
+    await Promise.all(Array.from({length: 5}, worker));
+    if(my !== run) return;
+    const bad = items.filter(i => i.failed).length;
+    say(bad ? `${bad} sticker chưa tải được. Bấm vào ô báo lỗi để thử lại.` : 'Xong. Bấm vào sticker để xem hoặc lưu riêng.', !!bad);
+    updateBar();
+  }catch(e){
+    if(my !== run) return;
+    if(e.kind === 'bad_token'){ editing = true; sync(); tokSay(errText(e), true); say(''); }
+    else say(errText(e), true);
+    sync();
+  }finally{
+    if(my === run) $('go').disabled = false;
+  }
+}
+
+/* ---------- lưu ---------- */
+async function shareFiles(files){
+  try{ await navigator.share({files}); return true; }
+  catch(e){ if(e && e.name === 'AbortError') return true; return false; }
+}
+async function shareAll(){
+  const files = items.filter(i => i.kind === 'image' && i.orig).map(i => {
+    const b = i.png || i.orig, ext = i.png ? 'png' : i.ext;
+    return new File([b], fname(i, ext), {type: b.type});
+  });
+  if(!files.length) return;
+  const ok = await shareFiles(files);
+  if(!ok) say('Không mở được bảng chia sẻ. Dùng nút Tải .zip thay thế.', true);
+}
+async function zipAll(){
+  if(typeof JSZip === 'undefined'){ say('Không tải được thư viện nén. Kiểm tra mạng rồi tải lại trang.', true); return; }
+  const btn = $('zipBtn'), old = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Đang nén...';
+  try{
+    const z = new JSZip();
+    items.filter(i => i.orig).forEach(i => { const {blob, ext} = pick(i); z.file(fname(i, ext), blob); });
+    const out = await z.generateAsync({type: 'blob'});
+    save(out, `${setName}.zip`);
+    say('Đã tạo file zip. Kiểm tra mục Tải xuống của trình duyệt.');
+  }catch(e){ say('Không nén được file. Thử lại nhé.', true); }
+  btn.textContent = old; updateBar();
+}
+
+/* ---------- xem từng sticker ---------- */
+function openDlg(it){
+  current = it;
+  const st = $('stage'); st.textContent = '';
+  let el;
+  if(it.kind === 'video'){
+    el = document.createElement('video'); el.src = it.url;
+    el.muted = true; el.loop = true; el.autoplay = true; el.playsInline = true;
+  }else if(it.kind === 'tgs'){
+    el = document.createElement('p');
+    el.textContent = `${it.emoji} Sticker động (.tgs) chỉ xem được trong Telegram. Bạn vẫn tải được file gốc.`;
+  }else{
+    el = document.createElement('img'); el.src = it.url; el.alt = `Sticker ${it.i + 1} ${it.emoji}`;
+  }
+  st.append(el);
+  $('dlgTitle').textContent = `Sticker ${it.i + 1} ${it.emoji}`;
+  const os = $('oneShare');
+  os.hidden = !(canShareFiles && it.kind === 'image');
+  os.textContent = IOS ? 'Lưu vào Ảnh' : 'Chia sẻ';
+  $('oneSave').textContent = it.kind === 'tgs' ? 'Tải file gốc' : 'Tải về';
+  $('dlg').showModal();
+}
+
+/* ---------- gắn sự kiện ---------- */
+$('finder').onsubmit = e => { e.preventDefault(); load($('pack').value); };
+$('pack').addEventListener('paste', e => {
+  const t = (e.clipboardData || window.clipboardData).getData('text');
+  if(/addstickers|addemoji/.test(t)) setTimeout(() => load($('pack').value), 0);
+});
+$('pasteBtn').onclick = async () => {
+  try{
+    const t = (await navigator.clipboard.readText() || '').trim();
+    if(t){ $('pack').value = t; load(t); }
+    else say('Clipboard đang trống. Copy link bộ sticker trong Telegram trước.');
+  }catch(e){
+    $('pack').focus();
+    say('Không đọc được clipboard. Nhấn giữ ô nhập rồi chọn Dán.');
+  }
+};
+$('tokChange').onclick = () => { editing = true; tokSay(''); sync(); $('tok').focus(); };
+$('tokCancel').onclick = () => { editing = false; $('tok').value = ''; tokSay(''); sync(); };
+$('tokForm').onsubmit = async e => {
+  e.preventDefault();
+  const t = $('tok').value.trim();
+  if(!t){ tokSay('Dán token vào ô trên.', true); return; }
+  tokSay('Đang kiểm tra token...');
+  const old = token; token = t;
+  try{
+    const me = await api('getMe');
+    botName = me.username || '';
+    LS.set('tg_tok', t); LS.set('tg_bot', botName);
+    editing = false; $('tok').value = ''; tokSay(''); sync();
+    $('pack').focus();
+  }catch(err){
+    token = old; tokSay(errText(err), true);
+  }
+};
+$('shareBtn').onclick = shareAll;
+$('zipBtn').onclick = zipAll;
+$('dlgClose').onclick = () => $('dlg').close();
+$('dlg').addEventListener('click', e => { if(e.target === $('dlg')) $('dlg').close(); });
+$('dlg').addEventListener('close', () => { $('stage').textContent = ''; current = null; });
+$('oneShare').onclick = async () => {
+  const it = current; if(!it) return;
+  const b = it.png || it.orig, ext = it.png ? 'png' : it.ext;
+  const ok = await shareFiles([new File([b], fname(it, ext), {type: b.type})]);
+  if(!ok) $('oneSave').focus();
+};
+$('oneSave').onclick = () => {
+  const it = current; if(!it) return;
+  const {blob, ext} = pick(it);
+  save(blob, fname(it, ext));
+};
+
+sync();
+</script>
+</body>
+</html>
