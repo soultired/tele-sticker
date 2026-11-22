@@ -245,8 +245,11 @@ async function api(method, params){
 }
 async function fetchBlob(path){
   let r;
-  try{ r = await fetch(`https://api.telegram.org/file/bot${token}/${path}`); }
-  catch(e){ throw new Fail('net'); }
+  try{ r = await fetch(`https://api.telegram.org/file/bot${token}/${path}`); if(!r.ok) throw 0; }
+  catch(e){
+    try{ r = await fetch(`/api/file?path=${encodeURIComponent(path)}`, {headers:{'x-bot-token': token}}); }
+    catch(e2){ throw new Fail('net'); }
+  }
   if(!r.ok) throw new Fail('net');
   return r.blob();
 }
@@ -338,7 +341,7 @@ function updateBar(){
   share.hidden = !canShareFiles;
   share.disabled = !fin || !stat;
   if(canShareFiles){
-    share.textContent = !fin ? wait : IOS ? `Lưu ${stat} sticker vào Ảnh` : `Chia sẻ ${stat} sticker`;
+    share.textContent = !fin ? wait : !stat ? 'Không có ảnh tĩnh' : IOS ? `Lưu ${stat} sticker vào Ảnh` : `Chia sẻ ${stat} sticker`;
     $('zipBtn').textContent = 'Tải .zip';
     $('zipBtn').className = 'sec';
   }else{
